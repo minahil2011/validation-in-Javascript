@@ -1,0 +1,113 @@
+/* =============================================
+   PRE-WRITTEN HELPERS — Do not change
+   ============================================= */
+
+var currentOTP    = null;
+var timerInterval = null;
+var attempts      = 0;
+var otpExpired    = false;
+
+function el(id) {
+  return document.getElementById(id);
+}
+
+function showScreen(id) {
+  ["screen-phone", "screen-otp", "screen-success"].forEach(function(s) {
+    el(s).style.display = "none";
+  });
+  el(id).style.display = "block";
+}
+
+function setMsg(text, type) {
+  el("msg").textContent = text;
+  el("msg").className   = "msg " + (type || "");
+}
+
+function tryAgain() {
+  attempts = 0;
+  otpExpired = false;
+  if (timerInterval) clearInterval(timerInterval);
+  el("otp-input").value           = "";
+  el("otp-input").className       = "otp-input";
+  el("phone-msg").textContent     = "";
+  el("phone-wrap").className      = "phone-input-wrap";
+  el("attempts-left").textContent = "";
+  setMsg("", "");
+  showScreen("screen-phone");
+}
+
+function sendOTP() {
+  var phone = el("phone-input").value.trim();
+  if (!phone || phone.length !== 10 || isNaN(Number(phone))) {
+    el("phone-msg").textContent = "⚠ Enter a valid 10-digit mobile number.";
+    el("phone-wrap").className  = "phone-input-wrap is-error";
+    return;
+  }
+  el("phone-msg").textContent   = "";
+  el("phone-wrap").className    = "phone-input-wrap";
+  el("sent-to").textContent     = phone;
+  currentOTP                    = String(Math.floor(100000 + Math.random() * 900000));
+  el("otp-display").textContent = currentOTP;
+  showScreen("screen-otp");
+  startTimer();
+}
+
+function startTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  otpExpired                      = false;
+  attempts                        = 0;
+  el("attempts-left").textContent = "";
+  el("otp-input").value           = "";
+  el("otp-input").className       = "otp-input";
+  setMsg("", "");
+  var count                       = 30;
+  el("timer").textContent         = count;
+  el("timer-text").style.display  = "inline";
+  el("resend-btn").style.display  = "none";
+  el("resend-btn").disabled       = true;
+  timerInterval = setInterval(function() {
+    el("timer").textContent = --count;
+    if (count <= 0) {
+      clearInterval(timerInterval);
+      otpExpired                     = true;
+      el("timer-text").style.display = "none";
+      el("resend-btn").style.display = "inline";
+      el("resend-btn").disabled      = false;
+    }
+  }, 1000);
+}
+
+
+/* =============================================
+   YOUR TASK — Write your code below
+   ============================================= */
+   function verifyOTP(){
+  var entered = el("otp-input").value.trim();
+  try{
+    if(!entered )   
+    throw "Please enter the OTP";
+    if(otpExpired) 
+    throw"OTP has expird. Please click Resend OTP."
+    if(entered.length !==6 || isNaN(Number(entered))) 
+    throw"OTP must be 6 digits.";
+    if(entered !== currentOTP){
+      attempts++;
+      el("attempts-left").textContent = 
+      attempts < 3 ? (3 - attempts) + "attempt(s) remaining":"";
+      throw "Incorrect OTP - " + (3 - attempts) + 
+      "attempt(s) left";
+    }
+    el("otp-input").className = "otp-input is-ok";
+    setTimeout(function(){
+      showScreen("screen-success");
+    }, 400);
+  }
+  catch(e){
+    setMsg(e, "error");
+    el("otp-input").className = "otp-input is-error";
+    if (attempts >=3){
+      tryAgain();
+      setMsg("too many wrong attempts. Please try again.", "error");
+    }
+  }
+}   
